@@ -4,7 +4,7 @@ RUN apk add --no-cache \
     git \
     ca-certificates
 
-COPY ./main.go $GOPATH/src/grpc-proxy/main.go
+COPY ./src/ $GOPATH/src/grpc-proxy/
 
 WORKDIR $GOPATH/src/grpc-proxy
 
