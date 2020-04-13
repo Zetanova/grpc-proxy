@@ -32,8 +32,8 @@ func serveReverseProxy(target string, res http.ResponseWriter, req *http.Request
 
 	//targetQuery := target.RawQuery
 	director := func(req *http.Request) {
-		req.URL.Scheme = "http"    //target.Scheme
-		req.URL.Host = "localhost" //target.Host
+		//req.URL.Scheme = target.Scheme
+		//req.URL.Host = target.Host
 		//req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
 		// if targetQuery == "" || req.URL.RawQuery == "" {
 		// 	req.URL.RawQuery = targetQuery + req.URL.RawQuery
@@ -44,12 +44,16 @@ func serveReverseProxy(target string, res http.ResponseWriter, req *http.Request
 		// 	// explicitly disable User-Agent so it's not set to default value
 		// 	req.Header.Set("User-Agent", "")
 		// }
+		req.URL.Scheme = "http"
+		req.URL.Host = "localhost"
+		req.Header.Set("X-Forwarded-Host", req.Header.Get("Host"))
+		req.Host = "localhost"
 	}
 
 	var dialer func() (net.Conn, error)
 
-	if strings.HasPrefix(target, "unix:/") {
-		addr := strings.TrimPrefix(target, "unix:/")
+	if strings.HasPrefix(target, "unix://") {
+		addr := strings.TrimPrefix(target, "unix://")
 		dialer = func() (net.Conn, error) {
 			//fmt.Printf("dial [unix] to %s\n", addr)
 			return net.Dial("unix", addr)
@@ -108,8 +112,10 @@ func main() {
 
 	fmt.Printf("Listening on [%s] proxy to %s\n", bindTo, proxyTo)
 
-	if strings.HasPrefix(bindTo, "unix:/") {
-		unixListener, err := net.Listen("unix", strings.TrimPrefix(bindTo, "unix:/"))
+	if strings.HasPrefix(bindTo, "unix://") {
+		addr := strings.TrimPrefix(bindTo, "unix://")
+		os.Remove(addr)
+		unixListener, err := net.Listen("unix", addr)
 		if err != nil {
 			panic(err)
 		}
